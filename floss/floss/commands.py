@@ -19,13 +19,6 @@ class Commands(scale.Commands):
         if not self.floss_path:
             raise error.CommandError("binary 'floss' not found")
 
-        self.env = os.environ
-        if 'HOME' not in self.env:
-            if config.scale_configs['floss']['home']:
-                self.env['HOME'] = config.scale_configs['floss']['home']
-            else:
-                raise error.CommandError("home directory is not set and is required by floss")
-
     @scale.command({
         'info': 'This function will return all strings found within the file passed'
     })
@@ -33,8 +26,7 @@ class Commands(scale.Commands):
         try:
             proc = subprocess.run([self.floss_path, file.file_path],
                                   stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE,
-                                  env=self.env)
+                                  stderr=subprocess.PIPE)
         except TimeoutError:
             raise error.CommandWarning("timeout when running floss")
 
@@ -56,8 +48,7 @@ class Commands(scale.Commands):
         try:
             proc = subprocess.run([self.floss_path, file.file_path, '--no-static-strings', '--no-stack-strings'],
                                   stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE,
-                                  env=self.env)
+                                  stderr=subprocess.PIPE)
         except TimeoutError:
             raise error.CommandWarning("timeout when running floss")
 
@@ -79,8 +70,7 @@ class Commands(scale.Commands):
         try:
             proc = subprocess.run([self.floss_path, file.file_path, '--no-static-strings', '--no-decoded-strings'],
                                   stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE,
-                                  env=self.env)
+                                  stderr=subprocess.PIPE)
         except TimeoutError:
             raise error.CommandWarning("timeout when running floss")
 
