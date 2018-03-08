@@ -1,0 +1,20 @@
+# Python
+.cache
+.coverage
+build
+dist
+htmlcov
+*.egg*
+*.pyc
+
+# Vim
+*.sw*
+
+# Pycharm
+*.idea*
+
+# Yara
+*.yar*
+
+# NIST NSRL
+snake/modules/nist-nsrl/NSRLFile

@@ -1,0 +1,3 @@
+recursive-include * *.conf
+
+global-exclude __pycache__
