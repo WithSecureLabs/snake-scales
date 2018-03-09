@@ -62,9 +62,9 @@ class Commands(scale.Commands):
                 })
                 new_file = fs.FileStorage()
                 new_file.create(file_path)
-                document = submitter.submit(file_schema, enums.FileType.FILE, new_file, file, NAME)
-                document = schema.FileSchema().dump(schema.FileSchema().load(document))  # Required to clean the above
-                samples += [document]
+                new_document = submitter.submit(file_schema, enums.FileType.FILE, new_file, file, NAME)
+                new_document = schema.FileSchema().dump(schema.FileSchema().load(new_document))  # Required to clean the above
+                samples += [new_document]
         return samples
 
     def extract_markdown(self, json):
