@@ -134,9 +134,12 @@ def metasploit(f_name, d_name):
 #  General
 # ------------------------------------------------------------------------------
 
-def analyse(connection, technique):
-    print('Analysing:')
-    r2 = r2pipe.open()
+def analyse(connection, technique, file_path=None, bits=32):
+    if file_path:
+        r2 = r2pipe.open(file_path, ['2', '-b{}'.format(bits)])
+        r2.cmd('aaa')
+    else:
+        r2 = r2pipe.open()
 
     funcs = r2.cmdj("aflj")
     if not funcs:
@@ -185,24 +188,26 @@ def parse_file(connection, path):
 
     if path.endswith(".dll") or path.endswith(".exe"):
         print("Processing %s..." % (path))
-        abs_path = os.path.abspath(path)
-        f = pefile.PE(abs_path)
-        for sym in f.DIRECTORY_ENTRY_EXPORT.symbols:
-            if sym.name is not None:
-                for technique in TECHNIQUES:
-                    sql_command = "SELECT id FROM techniques WHERE technique=?"
-                    c.execute(sql_command, (technique,))
-                    technique_id = c.fetchone()[0]
-                    dll_name = bytes(os.path.basename(path), 'ascii')
-                    h = eval(technique)(sym.name, dll_name)
-                    sql_command = "INSERT OR REPLACE INTO hashes VALUES (?, ?, ?, ?)"
-                    c.execute(sql_command, (technique_id, int(h), str(sym.name, 'ascii'), str(dll_name, 'ascii')))
+        try:
+            abs_path = os.path.abspath(path)
+            f = pefile.PE(abs_path)
+            for sym in f.DIRECTORY_ENTRY_EXPORT.symbols:
+                if sym.name is not None:
+                    for technique in TECHNIQUES:
+                        sql_command = "SELECT id FROM techniques WHERE technique=?"
+                        c.execute(sql_command, (technique,))
+                        technique_id = c.fetchone()[0]
+                        dll_name = bytes(os.path.basename(path), 'ascii')
+                        h = eval(technique)(sym.name, dll_name)
+                        sql_command = "INSERT OR REPLACE INTO hashes VALUES (?, ?, ?, ?)"
+                        c.execute(sql_command, (technique_id, int(h), str(sym.name, 'ascii'), str(dll_name, 'ascii')))
+        except AttributeError as err:
+            print("No exports found!")
 
     connection.commit()
 
 
 def generate(connection, paths):
-    print('Generating Hashes:')
     for path in paths:
         path = os.path.abspath(path)
         if os.path.isdir(path):
@@ -233,30 +238,51 @@ def search(connection, hash):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Decode function hashes to their corresponding function names.')
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument('-a', '--analyse', metavar='TECHNIQUE', type=str, help='Auto analyse functions using specified technique.')
-    group.add_argument('-g', '--generate', nargs='+', metavar='PATH', help='Generates the hashes required for decoding from DLLs and EXEs, specify directory or file.')
-    group.add_argument('-l', '--list', help='List Supported hashing techniques.', action='store_true')
-    group.add_argument('-s', '--search', metavar='HASH', type=str, help='Lookup hash in the database.')
+    parser = argparse.ArgumentParser(description='decode function hashes to their corresponding function names')
+    subparsers = parser.add_subparsers(help='command help')
+    subparsers.required = True
+    subparsers.dest = 'command'
+    parser_analyse = subparsers.add_parser('analyse', help='auto analyse functions using specified technique')
+    parser_analyse.add_argument('-b', '--bits', metavar='BITS', default=32, type=int, help='set asm.bits (default: 32)')
+    parser_analyse.add_argument('-d', '--database', metavar='DATABASE', type=str, help='path to the hasing database, if missing assumes $PWD')
+    parser_analyse.add_argument('-f', '--file', metavar='SHELLCODE', type=str, help='path to shellcode to analyse, if missing script must be run in r2')
+    parser_analyse.add_argument('technique', type=str, help='technique to analyse with')
+    parser_generate = subparsers.add_parser('generate', help='generates the hashes required for decoding from DLLs and EXEs, specify directory or file')
+    parser_generate.add_argument('-d', '--database', metavar='DATABASE', type=str, help='path to the hasing database, if missing assumes $PWD')
+    parser_generate.add_argument('sources', nargs='+', type=str, help='path to directory or individual file to generate hashes with')
+    subparsers.add_parser('list', help='list Supported hashing techniques')
+    parser_search = subparsers.add_parser('search', help='lookup hash in the database')
+    parser_search.add_argument('hash', type=str, help='the hash to search')
+    parser_search.add_argument('-d', '--database', metavar='DATABASE', type=str, help='path to the hasing database, if missing assumes $PWD')
     args = parser.parse_args()
 
-    script_dir = os.path.dirname(__file__)
-    db_path = os.path.join(script_dir, 'r2_hash_func_decoder.db')
+    if args.command == 'list':
+        print('Suported Hashing Techniques:')
+        for f in TECHNIQUES:
+            print('- %s' % f)
+        return
+
+    if args.database:
+        db_path = args.database
+    else:
+        script_dir = os.path.dirname(__file__)
+        db_path = os.path.join(script_dir, 'r2_hash_func_decoder.db')
     create_db(db_path)
 
     conn = sqlite3.connect(db_path)
 
-    if args.analyse:
-        analyse(conn, args.analyse)
-    if args.generate:
-        generate(conn, args.generate)
-    if args.list:
-        print('Suported Hashing Techniques:')
-        for f in TECHNIQUES:
-            print('- %s' % f)
-    if args.search:
-        search(conn, args.search)
+    if args.command == 'analyse':
+        file_path = None
+        if args.file:
+            file_path = args.file
+        print('Analysing:')
+        analyse(conn, args.technique, file_path, args.bits)
+    elif args.command == 'generate':
+        print('Generating Hashes:')
+        generate(conn, args.sources)
+    elif args.command == 'search':
+        print(args.hash)
+        search(conn, args.hash)
 
     conn.close()
 
