@@ -182,6 +182,14 @@ Runs `radare2` on a sample.
 
 - (Required) Radare2
 
+### Radare2 Scripts
+
+Runs `radare2` based scripts on a sample.
+
+#### Dependencies
+
+- (Required) Radare2
+
 ### Rekall
 
 Runs `rekall` on a sample.
