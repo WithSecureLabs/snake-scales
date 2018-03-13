@@ -40,19 +40,19 @@ from retdec import exceptions  # noqa pylint: disable=wrong-import-position
 
 
 # Interface things
-class Interface(scale.Interface):
+class Commands(scale.Commands):
     def check(self):
         if not API_URL:
-            raise error.InterfaceError("config variable 'api_url' has not been set")
+            raise error.CommandError("config variable 'api_url' has not been set")
         if API_URL == 'https://retdec.com/service/api' and not API_KEY:
-            raise error.InterfaceError("config variable 'api_key' has not been set and is required to query the online retdec")
+            raise error.CommandError("config variable 'api_key' has not been set and is required to query the online retdec")
         self.objdump_path = shutil.which('radare2')
         if not self.objdump_path:
-            raise error.InterfaceError("binary 'radare2' not found")
+            raise error.CommandError("binary 'radare2' not found")
 
         self.decomp = decompiler.Decompiler(api_key=API_KEY)
 
-    @scale.pull({
+    @scale.command({
         'args': {
             'address_range': fields.Str(),
             'function_name': fields.Str(),
@@ -75,9 +75,9 @@ class Interface(scale.Interface):
                 del args['function_name']
 
             if 'address_range' not in args and 'function_name' not in args:
-                raise error.InterfaceError("'address_range' or 'function_name' must be set")
+                raise error.CommandError("'address_range' or 'function_name' must be set")
             if 'address_range' in args and 'function_name' in args:
-                raise error.InterfaceError("'address_range' and 'function_name' are mutually exclusive")
+                raise error.CommandError("'address_range' and 'function_name' are mutually exclusive")
 
             if 'address_range' in args:
                 name = '{}'.format(args['address_range'])
@@ -86,13 +86,13 @@ class Interface(scale.Interface):
                 name = '{}'.format(args['function_name'])
                 kwargs['sel_decomp_funcs'] = [name]
         else:
-            raise error.InterfaceError("incorrect mode specified '{}' the following are supported: 'bin'".format(args['mode']))
+            raise error.CommandError("incorrect mode specified '{}' the following are supported: 'bin'".format(args['mode']))
 
         try:
             decompilation = self.decomp.start_decompilation(**kwargs)
             decompilation.wait_until_finished()
         except exceptions.RetdecError as err:
-            raise error.InterfaceError("retdec-python error: {}".format(err))
+            raise error.CommandError("retdec-python error: {}".format(err))
 
         return {
             'code': decompilation.get_hll_code(),
@@ -104,14 +104,13 @@ class Interface(scale.Interface):
         output += md.code(json['code'], 'c')
         return output
 
-    @scale.pull({
+    @scale.command({
         'args': {
             'analyse': fields.Bool(default=False, missing=False)
         },
         'info': 'returns a list of functions using radare2'
     })
     def functions(self, args, file, opts):
-        # NOTE: Not really an interface but this makes sense, promise!
         r2 = r2pipe.open(file.file_path, ['-2'])  # pylint: disable=invalid-name
 
         output = {}
