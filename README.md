@@ -205,6 +205,21 @@ Runs `rekall` on a sample.
 | cache\_dir | null | Location of the profiles cache directory |
 | repository\_path | null | Path to search for profiles in, useful for no internet access |
 
+### RetDec
+
+Runs the Retargetable Decompiler on parts of a sample.
+
+#### Dependencies
+
+- (Required) Rardare2
+
+#### Configuration
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| api\_key | null | API key required for interaction with RetDec's online instance |
+| api\_url | 'https://retdec.com/service/api' | URL to RetDec's API |
+
 ### TRiD
 
 Runs `trid` on a sample.

@@ -111,6 +111,7 @@ class Interface(scale.Interface):
         'info': 'returns a list of functions using radare2'
     })
     def functions(self, args, file, opts):
+        # NOTE: Not really an interface but this makes sense, promise!
         r2 = r2pipe.open(file.file_path, ['-2'])  # pylint: disable=invalid-name
 
         output = {}
