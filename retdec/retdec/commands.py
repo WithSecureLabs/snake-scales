@@ -1,4 +1,7 @@
+from os import path
 import shutil
+import subprocess
+import tempfile
 
 import r2pipe
 import requests
@@ -10,9 +13,6 @@ from snake import scale
 from snake.utils import markdown as md
 
 # Global things
-API_KEY = config.scale_configs['retdec']['api_key']
-API_URL = config.scale_configs['retdec']['api_url']
-
 PROXIES = {}
 if config.snake_config['http_proxy']:
     PROXIES['http'] = config.snake_config['http_proxy']
@@ -33,7 +33,6 @@ def start_new_session(self):
 # Now import retdec cause we need to override some of it!
 import retdec  # noqa pylint: disable=wrong-import-position
 from retdec import conn  # noqa pylint: disable=unused-import, wrong-import-position
-DEFAULT_API_URL = API_URL
 retdec.conn.APIConnection._start_new_session = start_new_session  # pylint: disable=protected-access
 from retdec import decompiler  # noqa pylint: disable=wrong-import-position
 from retdec import exceptions  # noqa pylint: disable=wrong-import-position
@@ -41,16 +40,44 @@ from retdec import exceptions  # noqa pylint: disable=wrong-import-position
 
 # Interface things
 class Commands(scale.Commands):
-    def check(self):
-        if not API_URL:
-            raise error.CommandError("config variable 'api_url' has not been set")
-        if API_URL == 'https://retdec.com/service/api' and not API_KEY:
-            raise error.CommandError("config variable 'api_key' has not been set and is required to query the online retdec")
-        self.objdump_path = shutil.which('radare2')
-        if not self.objdump_path:
-            raise error.CommandError("binary 'radare2' not found")
+    def _decompile(self, kwargs):
+        # NOTE: Using kwargs is lazy but it just makes life easier!
+        # Online
+        if self.decomp:
+            try:
+                decompilation = self.decomp.start_decompilation(**kwargs)
+                decompilation.wait_until_finished()
+            except exceptions.RetdecError as err:
+                raise error.CommandError("retdec-python error: {}".format(err))
 
-        self.decomp = decompiler.Decompiler(api_key=API_KEY)
+            return decompilation.get_hll_code()
+        # Local
+        else:
+            with tempfile.NamedTemporaryFile('rb') as fp:
+                cmd = [path.join(self.retdec_dir, 'bin/retdec-decompiler.sh'), '-o', fp.name]
+                if 'sel_decomp_funcs' in kwargs:
+                    cmd += ['--select-funcs', kwargs['sel_decomp_funcs']]
+                if 'sel_decomp_ranges' in kwargs:
+                    cmd += ['--select-ranges', kwargs['sel_decomp_ranges']]
+                cmd += [kwargs['input_file']]
+                proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                if proc.returncode:
+                    raise error.CommandError("retdec error: {}".format(proc.stderr.decode()))
+                return fp.read().decode()
+
+    def check(self):
+        self.decomp = None
+        self.retdec_dir = None
+        if not shutil.which('radare2'):
+            raise error.CommandError("binary 'radare2' not found")
+        if config.scale_configs['retdec']['online']:
+            if not config.scale_configs['retdec']['api_key']:
+                raise error.CommandError("config variable 'api_key' has not been set and is required to query the online retdec")
+            self.decomp = decompiler.Decompiler(api_key=config.scale_configs['retdec']['api_key'])
+        else:
+            if not config.scale_configs['retdec']['retdec_dir']:
+                raise error.CommandError("config variable 'retdec_dir' has not been set and is required to use a local retdec instance")
+            self.retdec_dir = config.scale_configs['retdec']['retdec_dir']
 
     @scale.command({
         'args': {
@@ -84,18 +111,12 @@ class Commands(scale.Commands):
                 kwargs['sel_decomp_ranges'] = name
             elif 'function_name' in args:
                 name = '{}'.format(args['function_name'])
-                kwargs['sel_decomp_funcs'] = [name]
+                kwargs['sel_decomp_funcs'] = name
         else:
             raise error.CommandError("incorrect mode specified '{}' the following are supported: 'bin'".format(args['mode']))
 
-        try:
-            decompilation = self.decomp.start_decompilation(**kwargs)
-            decompilation.wait_until_finished()
-        except exceptions.RetdecError as err:
-            raise error.CommandError("retdec-python error: {}".format(err))
-
         return {
-            'code': decompilation.get_hll_code(),
+            'code': self._decompile(kwargs),
             'name': name
         }
 

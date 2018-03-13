@@ -217,8 +217,9 @@ Runs the Retargetable Decompiler on parts of a sample.
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| api\_key | null | API key required for interaction with RetDec's online instance |
-| api\_url | 'https://retdec.com/service/api' | URL to RetDec's API |
+| online | true | Toggle between using the online instance or a local one |
+| api\_key | null | API key required for interaction with RetDec's online instance (online) |
+| retdec\_dir | null | Directory that retdec is installed to (local) |
 
 ### TRiD
 
