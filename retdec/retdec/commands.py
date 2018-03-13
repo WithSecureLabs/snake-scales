@@ -126,9 +126,6 @@ class Commands(scale.Commands):
         return output
 
     @scale.command({
-        'args': {
-            'analyse': fields.Bool(default=False, missing=False)
-        },
         'info': 'returns a list of functions using radare2'
     })
     def functions(self, args, file, opts):
@@ -137,13 +134,12 @@ class Commands(scale.Commands):
         output = {}
         output['exports'] = r2.cmdj('iEj')
         output['functions'] = []
-        if args['analyse']:
-            r2.cmd('aaa')
-            funcs = r2.cmdj('aflj')
-            if funcs:
-                for i in funcs:
-                    i['address_range'] = '0x%08x-0x%08x' % (i['offset'], i['offset'] + i['size'])
-                    output['functions'] += [i]
+        r2.cmd('aaa')
+        funcs = r2.cmdj('aflj')
+        if funcs:
+            for i in funcs:
+                i['address_range'] = '0x%08x-0x%08x' % (i['offset'], i['offset'] + i['size'])
+                output['functions'] += [i]
 
         return output
 
