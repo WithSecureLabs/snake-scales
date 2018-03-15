@@ -56,7 +56,7 @@ class Commands(scale.Commands):
             with tempfile.NamedTemporaryFile('rb') as fp:
                 cmd = [path.join(self.retdec_dir, 'bin/retdec-decompiler.sh'), '-o', fp.name]
                 if 'sel_decomp_funcs' in kwargs:
-                    cmd += ['--select-funcs', kwargs['sel_decomp_funcs']]
+                    cmd += ['--select-functions', kwargs['sel_decomp_funcs']]
                 if 'sel_decomp_ranges' in kwargs:
                     cmd += ['--select-ranges', kwargs['sel_decomp_ranges']]
                 cmd += [kwargs['input_file']]
@@ -107,11 +107,11 @@ class Commands(scale.Commands):
                 raise error.CommandError("'address_range' and 'function_name' are mutually exclusive")
 
             if 'address_range' in args:
-                name = '{}'.format(args['address_range'])
-                kwargs['sel_decomp_ranges'] = name
+                name = '{}'.format(args['address_range'].strip())
+                kwargs['sel_decomp_ranges'] = name.strip()
             elif 'function_name' in args:
-                name = '{}'.format(args['function_name'])
-                kwargs['sel_decomp_funcs'] = name
+                name = '{}'.format(args['function_name'].strip())
+                kwargs['sel_decomp_funcs'] = name.strip()
         else:
             raise error.CommandError("incorrect mode specified '{}' the following are supported: 'bin'".format(args['mode']))
 
