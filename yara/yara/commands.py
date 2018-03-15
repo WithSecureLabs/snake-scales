@@ -132,13 +132,18 @@ class Commands(scale.Commands):
             output += md.table_row([
                 md.sanitize(r['file']),
                 md.bold(md.sanitize(r['rule'])),
-                md.code(md.sanitize(r['hits'][0]['hit'])) if r['hits'] else '',
-                md.code(md.sanitize(r['hits'][0]['offset'])) if r['hits'] else '',
+                md.code(md.sanitize(r['hits'][0]['hit']), inline=True) if r['hits'] else '',
+                md.code(md.sanitize(r['hits'][0]['offset']), inline=True) if r['hits'] else '',
                 md.sanitize(r['description']),
                 md.sanitize(r['author'])
             ])
             for hit in r['hits'][1:]:
-                output += md.table_row(('', '', md.code(md.sanitize(hit['hit'])), md.code(md.sanitize(hit['offset'])), '', ''))
+                output += md.table_row(('',
+                                        '',
+                                        md.code(md.sanitize(hit['hit']), inline=True),
+                                        md.code(md.sanitize(hit['offset']), inline=True),
+                                        '',
+                                        ''))
         if not json:
             output += md.table_row(('-', '-', '-', '-', '-'))
         return output

@@ -98,10 +98,10 @@ class Commands(scale.Commands):
                 stream['stream'],
                 stream['stream_path'],
                 stream['vba_filename'],
-                md.code(md.sanitize(code[0]))
+                md.code(md.sanitize(code[0]), inline=True)
             ))
             for extra in code[1:]:
-                output += md.table_row(('', '', '', md.code(md.sanitize(extra))))
+                output += md.table_row(('', '', '', md.code(md.sanitize(extra), inline=True)))
         if not json:
             output += md.table_row(('-', '-', '-', '-'))
         return output
@@ -135,7 +135,7 @@ class Commands(scale.Commands):
         for k in json:
             output += md.table_row([
                 k['type'],
-                md.code(md.sanitize(k['keyword'])),
+                md.code(md.sanitize(k['keyword']), inline=True),
                 k['description']
             ])
         if not json:

@@ -122,7 +122,7 @@ class Commands(scale.Commands):
 
     def decompile_markdown(self, json):
         output = md.h3(json['name'])
-        output += md.code(json['code'], 'c')
+        output += md.code(json['code'], lang='c')
         return output
 
     @scale.command({
