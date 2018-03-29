@@ -9,6 +9,7 @@ from snake.utils import markdown as md
 
 # Global things
 API_KEY = config.scale_configs['virustotal']['api_key']
+IS_PRIVATE = bool(config.scale_configs['virustotal']['api_private'])
 
 PROXIES = {}
 if config.snake_config['http_proxy']:
@@ -46,11 +47,18 @@ class Interface(scale.Interface):
             if 'response_code' not in response.json():
                 raise error.InterfaceWarning("unknown response from VirusTotal")
             data = {'vt': response.json()}
-            if not db.file_collection.update(sha256_digest, data):
+            db.file_collection.update(sha256_digest, data)
+            document = db.file_collection.select(sha256_digest)
+            if not document or 'vt' not in document:
                 raise error.MongoError('error adding vt into file document %s' % sha256_digest)
-            document = data
         if document['vt']["response_code"] is 0:
             raise error.InterfaceWarning("file is not present on VirusTotal")
+
+        # Check if we had public key but now its private, if so warn that cache is out of date
+        # NOTE: we just check for missing info variable
+        if IS_PRIVATE and 'first_seen' not in document['vt']:
+            raise error.InterfaceWarning("private key specified but no private api data in cache, please flush vt cache for sample")
+
         return document['vt']
 
     def check(self):
@@ -96,99 +104,6 @@ class Interface(scale.Interface):
 
         return output
 
-    @scale.pull({
-        'args': {
-            'cache': fields.Bool(missing=True)
-        },
-        'info': 'VirusTotal general info report'
-    })
-    def info(self, args, file, opts):
-        j = self._vt_scan(file.sha256_digest, cache=args['cache'])
-        score = 0
-        for _, v in j['scans'].items():
-            if v['detected'] is True:
-                score += 1
-        output = {
-            'vt_link': j['permalink'],
-            'first_seen': j['first_seen'],
-            'last_seen': j['last_seen'],
-            'score': "%i/%i" % (score, len(j['scans'])),
-            'times_submitted': j['times_submitted'],
-            'type': j['type']
-        }
-        return output
-
-    def info_markdown(self, json):
-        output = md.table_header(('Attribute', 'Value'))
-        output += md.table_row(('VT Link', json['vt_link']))
-        output += md.table_row(('First Seen', json['first_seen']))
-        output += md.table_row(('Last Seen', json['last_seen']))
-        if int(json['score'].split('/')[0]) < 3:
-            output += md.table_row(('Score', '%green ' + json['score'] + ' %'))
-        else:
-            output += md.table_row(('Score', '%red ' + json['score'] + ' %'))
-        output += md.table_row(('Times Submitted', str(json['times_submitted'])))
-        output += md.table_row(('Type', json['type']))
-        return output
-
-    @scale.pull({
-        'args': {
-            'cache': fields.Bool(missing=True)
-        },
-        'info': 'VirtualTotal submission names'
-    })
-    def names(self, args, file, opts):
-        j = self._vt_scan(file.sha256_digest, cache=args['cache'])
-        return j['submission_names']
-
-    def names_markdown(self, json):
-        output = '| Submission Names |\r\n'
-        output += '| :------ |\r\n'
-        for name in json:
-            output += '| ' + name + ' |' + '\r\n'
-
-        return output
-
-    @scale.pull({
-        'args': {
-            'cache': fields.Bool(missing=True)
-        },
-        'info': 'VirusTotal associates URLs'
-    })
-    def urls(self, args, file, opts):
-        j = self._vt_scan(file.sha256_digest, cache=args['cache'])
-        return j['ITW_urls']
-
-    def urls_markdown(self, json):
-        output = '| Associated URLs |\r\n'
-        output += '| :------ |\r\n'
-        for url in json:
-            # TODO: Determine some kind of URL sanitiser for use here
-            output += '| ' + url.replace('http', 'hxxp') + ' |' + '\r\n'
-
-        return output
-
-    @scale.pull({
-        'args': {
-            'cache': fields.Bool(missing=True)
-        },
-        'info': 'VirtualTotal submission names'
-    })
-    def parents(self, args, file, opts):
-        j = self._vt_scan(file.sha256_digest, cache=args['cache'])
-        if 'compressed_parents' in j['additional_info']:
-            return j['additional_info']['compressed_parents']
-        return []
-
-    def parents_markdown(self, json):
-        output = '| Compressed Parents |\r\n'
-        output += '| :------ |\r\n'
-        for name in json:
-            output += '| [' + name + '](https://www.virustotal.com/#/file/' + name + '/analysis) |' + '\r\n'
-        if not json:
-            output += md.table_row(('-'))
-        return output
-
     # TODO: Do It!
     # @scale.push({
     #     'info': 'submit file to virustotal'
@@ -196,3 +111,124 @@ class Interface(scale.Interface):
     # def submit(self, args, file, opts):
     #     # TODO: Implement
     #     pass
+
+    if IS_PRIVATE:
+        @scale.pull({
+            'args': {
+                'cache': fields.Bool(missing=True)
+            },
+            'info': 'VirusTotal general info report'
+        })
+        def info(self, args, file, opts):
+            j = self._vt_scan(file.sha256_digest, cache=args['cache'])
+            score = 0
+            for _, v in j['scans'].items():
+                if v['detected'] is True:
+                    score += 1
+            output = {
+                'vt_link': j['permalink'],
+                'first_seen': j['first_seen'],
+                'last_seen': j['last_seen'],
+                'score': "%i/%i" % (score, len(j['scans'])),
+                'times_submitted': j['times_submitted'],
+                'type': j['type']
+            }
+            return output
+
+        def info_markdown(self, json):
+            output = md.table_header(('Attribute', 'Value'))
+            output += md.table_row(('VT Link', json['vt_link']))
+            output += md.table_row(('First Seen', json['first_seen']))
+            output += md.table_row(('Last Seen', json['last_seen']))
+            if int(json['score'].split('/')[0]) < 3:
+                output += md.table_row(('Score', '%green ' + json['score'] + ' %'))
+            else:
+                output += md.table_row(('Score', '%red ' + json['score'] + ' %'))
+            output += md.table_row(('Times Submitted', str(json['times_submitted'])))
+            output += md.table_row(('Type', json['type']))
+            return output
+
+        @scale.pull({
+            'args': {
+                'cache': fields.Bool(missing=True)
+            },
+            'info': 'VirtualTotal submission names'
+        })
+        def names(self, args, file, opts):
+            j = self._vt_scan(file.sha256_digest, cache=args['cache'])
+            return j['submission_names']
+
+        def names_markdown(self, json):
+            output = '| Submission Names |\r\n'
+            output += '| :------ |\r\n'
+            for name in json:
+                output += '| ' + name + ' |' + '\r\n'
+
+            return output
+
+        @scale.pull({
+            'args': {
+                'cache': fields.Bool(missing=True)
+            },
+            'info': 'VirusTotal associates URLs'
+        })
+        def urls(self, args, file, opts):
+            j = self._vt_scan(file.sha256_digest, cache=args['cache'])
+            return j['ITW_urls']
+
+        def urls_markdown(self, json):
+            output = '| Associated URLs |\r\n'
+            output += '| :------ |\r\n'
+            for url in json:
+                # TODO: Determine some kind of URL sanitiser for use here
+                output += '| ' + url.replace('http', 'hxxp') + ' |' + '\r\n'
+
+            return output
+
+        @scale.pull({
+            'args': {
+                'cache': fields.Bool(missing=True)
+            },
+            'info': 'VirtualTotal submission names'
+        })
+        def parents(self, args, file, opts):
+            j = self._vt_scan(file.sha256_digest, cache=args['cache'])
+            if 'compressed_parents' in j['additional_info']:
+                return j['additional_info']['compressed_parents']
+            return []
+
+        def parents_markdown(self, json):
+            output = '| Compressed Parents |\r\n'
+            output += '| :------ |\r\n'
+            for name in json:
+                output += '| [' + name + '](https://www.virustotal.com/#/file/' + name + '/analysis) |' + '\r\n'
+            if not json:
+                output += md.table_row(('-'))
+            return output
+    else:
+        @scale.pull({
+            'args': {
+                'cache': fields.Bool(missing=True)
+            },
+            'info': 'VirusTotal general info report'
+        })
+        def info(self, args, file, opts):
+            j = self._vt_scan(file.sha256_digest, cache=args['cache'])
+            score = 0
+            for _, v in j['scans'].items():
+                if v['detected'] is True:
+                    score += 1
+            output = {
+                'vt_link': j['permalink'],
+                'score': "%i/%i" % (score, len(j['scans'])),
+            }
+            return output
+
+        def info_markdown(self, json):
+            output = md.table_header(('Attribute', 'Value'))
+            output += md.table_row(('VT Link', json['vt_link']))
+            if int(json['score'].split('/')[0]) < 3:
+                output += md.table_row(('Score', '%green ' + json['score'] + ' %'))
+            else:
+                output += md.table_row(('Score', '%red ' + json['score'] + ' %'))
+            return output

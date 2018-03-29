@@ -2,7 +2,7 @@ from snake.scale import FileType, scale
 
 
 NAME = "virustotal"
-VERSION = "1.0"
+VERSION = "1.1"
 
 AUTHOR = "Matt Watkins"
 AUTHOR_EMAIL = "matthew.watkins@countercept.com"

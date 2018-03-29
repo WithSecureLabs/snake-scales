@@ -246,6 +246,7 @@ Allows Snake to interact with VirusTotal, such as querying VT for information ab
 | Variable | Default | Description |
 | --- | --- | --- |
 | api\_key | null | VirusTotal API key |
+| api\_private | false | Enable private features when using private VirusTotal API key |
 
 ### Volatility
 
