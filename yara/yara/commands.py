@@ -28,10 +28,10 @@ class Commands(scale.Commands):
         if not os.listdir(RULES_PATH):
             raise error.CommandError("'rules_path': '{}' is empty".format(RULES_PATH))
         # Loop through the rules folder and append all of the yar[a] files
-        for _root, _dirs, files in os.walk(RULES_PATH):
+        for dir_path, _dirs, files in os.walk(RULES_PATH):
             for f in files:
                 if f.endswith('.yar') or f.endswith('.yara'):
-                    rule_files.append(os.path.join(RULES_PATH, f))
+                    rule_files.append(os.path.join(dir_path, f))
 
         # Compile each of the new yara files
         for rule_file in rule_files:
