@@ -13,7 +13,7 @@ setup(
     },
     install_requires=[
         "snake",
-        "yara-python"
+        "yara-python==3.7.0"
     ],
 
     entry_points={
