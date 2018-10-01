@@ -20,32 +20,48 @@ class Interface(scale.Interface):
         if CUCKOO_API is None or CUCKOO_API == '':
             raise error.InterfaceError("config variable 'cuckoo_api' has not been set")
 
+    def get_id(self, sha256_digest):
+        try:
+            resp = requests.get(CUCKOO_API + '/files/view/sha256/' + file.sha256_digest, verify=VERIFY)
+        except requests.exceptions.RequestException:
+            raise error.InterfaceError("failed to connect to Cuckoo")
+        if resp.status_code != requests.codes.ok:  # pylint: disable=no-member
+            raise error.InterfaceWarning("file has never been submitted to Cuckoo")
+        return resp.json()['sample']['id']
+
+    def get_machines():
+        try:
+            resp = requests.get(CUCKOO_API + '/machines/list', verify=VERIFY)
+        except requests.exceptions.RequestException:
+            raise error.InterfaceError("failed to connect to Cuckoo")
+        if resp.status_code != requests.codes.ok:  # pylint: disable=no-member
+            raise error.InterfaceWarning("failed to get machine list")
+        machines = []
+        for machine in resp.json()['machines']:
+            machines += [machine['name']]
+        return machines
+
+    def get_tasks(self, sample_id):
+        resp = requests.get(CUCKOO_API + '/tasks/sample/%s' % sample_id, verify=VERIFY)
+        if not resp.status_code == requests.codes.ok:  # pylint: disable=no-member
+            raise error.InterfaceWarning("no reports, sample must be pending/running")
+        return resp.json()['tasks']
+
     @scale.pull({
         'info': 'summary of scores for the sample'
     })
     def info(self, args, file, opts):
-        try:
-            j = requests.get(CUCKOO_API + '/files/view/sha256/' + file.sha256_digest, verify=VERIFY).json()
-        except requests.exceptions.RequestException:
-            raise error.InterfaceError("failed to connect to Cuckoo")
-
-        if 'sample' not in j:
-            raise error.InterfaceWarning("file has never been submitted to Cuckoo")
-        s_id = j['sample']['id']
-        r = requests.get(CUCKOO_API + '/tasks/list', verify=VERIFY)
-        if not r.status_code == requests.codes.ok:  # pylint: disable=no-member
-            return "No reports, sample must be pending/running", "pending"
-        j = r.json()
+        sample_id = self.get_id(file.sha256_digest)
+        tasks = self.get_tasks(sample_id)
         output = []
-        for t in j['tasks']:
-            if t['sample_id'] == s_id:
-                r = requests.get(CUCKOO_API + '/tasks/report/' + str(t['id']), verify=VERIFY)
-                if r.status_code == requests.codes.ok:  # pylint: disable=no-member
-                    j = r.json()
-                    output += [{
-                        'score': j['info']['score'],
-                        'name': j['info']['machine']['name']
-                    }]
+        for t in tasks:
+            resp = requests.get(CUCKOO_API + '/tasks/report/' + str(t['id']), verify=VERIFY)
+            if resp.status_code == requests.codes.ok:  # pylint: disable=no-member
+                j = resp.json()
+                output += [{
+                    'score': j['info']['score'],
+                    'name': j['info']['machine']['name']
+                }]
         if not output:
             return error.InterfaceWarning("no information available!")
         return {'info': output}
@@ -126,27 +142,16 @@ class Interface(scale.Interface):
         'info': 'view reports for sample'
     })
     def reports(self, args, file, opts):
-        try:
-            j = requests.get(CUCKOO_API + '/files/view/sha256/' + file.sha256_digest, verify=VERIFY).json()
-        except requests.exceptions.RequestException:
-            raise error.InterfaceError("failed to connect to Cuckoo")
-
-        if 'sample' not in j:
-            raise error.InterfaceWarning("file has never been submitted to Cuckoo")
-        s_id = j['sample']['id']
-        r = requests.get(CUCKOO_API + '/tasks/list', verify=VERIFY)
-        if not r.status_code == requests.codes.ok:  # pylint: disable=no-member
-            return "No reports, sample must be pending/running", "pending"
-        j = r.json()
+        sample_id = self.get_id(file.sha256_digest)
+        tasks = self.get_tasks(sample_id)
         output = {'reports': []}
-        for t in j['tasks']:
-            if t['sample_id'] == s_id:
-                output['reports'] += [{
-                    'id': str(t['id']),
-                    'url': config.scale_configs['cuckoo']['cuckoo_url'] + str(t['id']),
-                    'timestamp': str(t['added_on']),
-                    'status': str(t['status'])
-                }]
+        for t in tasks:
+            output['reports'] += [{
+                'id': str(t['id']),
+                'url': config.scale_configs['cuckoo']['cuckoo_url'] + str(t['id']),
+                'timestamp': str(t['added_on']),
+                'status': str(t['status'])
+            }]
         return output
 
     def reports_markdown(self, json):
@@ -157,9 +162,9 @@ class Interface(scale.Interface):
 
     @scale.push({
         'args': {
-            'machine': fields.Str(required=False),
-            'priority': fields.Int(required=False),
-            'timeout': fields.Int(required=False)
+            'machine': fields.Str(required=False, values=get_machines),
+            'priority': fields.Str(required=False, default="medium", values=['low', 'medium', 'high']),
+            'timeout': fields.Int(required=False, default=120)
         },
         'info': 'submit sample to cuckoo'
     })

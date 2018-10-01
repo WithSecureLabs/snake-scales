@@ -1,4 +1,5 @@
 from os import path
+import os
 import shutil
 import subprocess
 
@@ -38,7 +39,9 @@ class Commands(scale.Commands):
     })
     def trid(self, args, file, opts):
         try:
-            return {'trid': str(subprocess.check_output([self.trid_path, file.file_path, '-d:{}'.format(self.triddefs_path)]), encoding="utf-8").lstrip('\r\n')}
+            env = os.environ.copy()
+            env["LC_ALL"] = "C"
+            return {'trid': str(subprocess.check_output([self.trid_path, file.file_path, '-d:{}'.format(self.triddefs_path)], env=env), encoding="utf-8").lstrip('\r\n')}
         except Exception:
             raise error.CommandWarning("an error occurred with the trid module")
 

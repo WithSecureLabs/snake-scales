@@ -2,7 +2,7 @@ from snake.scale import scale
 
 
 NAME = "radare2_scripts"
-VERSION = "1.0"
+VERSION = "1.1"
 
 AUTHOR = "Alex Kornitzer"
 AUTHOR_EMAIL = "alex.kornitzer@countercept.com"

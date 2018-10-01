@@ -45,10 +45,7 @@ class Commands(scale.Commands):
                     app_log.warning('error with yara module when compiling rule: %s', err)
                     # raise CommandWarning('error with yara module when compiling rule: %s' % err)
 
-    @scale.command({
-        'info': 'show a list of the yara rule'
-    })
-    def rules(self, args, file, opts):
+    def rules():
         output = []
         # Loop through the compiled rules
         for _root, _dirs, files in os.walk(RULES_PATH):
@@ -57,12 +54,9 @@ class Commands(scale.Commands):
                     output += [os.path.join(RULES_PATH, f)]
         return output
 
-    def rules_plaintext(self, json):
-        return '\n'.join(json)
-
     @scale.command({
         'args': {
-            'rule': fields.Str(required=False)
+            'rule': fields.Str(required=False, values=rules)
         },
         'info': 'scan a file with the available yara rules. Allows for only a single rule to be passed'
     })

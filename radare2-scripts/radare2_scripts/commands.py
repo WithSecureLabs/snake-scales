@@ -79,8 +79,8 @@ class Commands(scale.Commands):  # pylint: disable=too-many-public-methods
 
     @scale.command({
         'args': {
-            'bits': fields.Str(default='32', missing='32'),
-            'technique': fields.Str(required=True)
+            'bits': fields.Str(default='32', missing='32', values=['32', '64']),
+            'technique': fields.Str(required=True, values=r2_hash_func_decoder.TECHNIQUES)
         },
         'info': 'scan shellcode for hashed functions'
     })
