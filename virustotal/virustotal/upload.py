@@ -50,6 +50,12 @@ if IS_PRIVATE:
                                 proxies=PROXIES,
                                 stream=True,
                                 timeout=10)
+            if resp.status_code == 204:
+                raise error.UploadError("request rate limit exceeded")
+            elif resp.status_code == 400:
+                raise error.UploadError("bad request")
+            elif resp.status_code == 403:
+                raise error.UploadError("forbidden")
             name = None
             if 'Content-Disposition' in resp.headers:
                 _disp, params = cgi.parse_header(resp.headers['Content-Disposition'])
