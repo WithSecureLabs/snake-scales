@@ -36,7 +36,7 @@ class Interface(scale.Interface):
             raise error.InterfaceError("failed to connect to Cuckoo")
         if resp.status_code != requests.codes.ok:  # pylint: disable=no-member
             raise error.InterfaceWarning("failed to get machine list")
-        machines = []
+        machines = ["default"]
         for machine in resp.json()['machines']:
             machines += [machine['name']]
         return machines
@@ -162,9 +162,9 @@ class Interface(scale.Interface):
 
     @scale.push({
         'args': {
-            'machine': fields.Str(required=False, default="default", values=get_machines),
-            'priority': fields.Str(required=False, default="medium", values=['low', 'medium', 'high']),
-            'execution_timeout': fields.Int(required=False, default=120)
+            'machine': fields.Str(required=False, default="default", missing="default", values=get_machines),
+            'priority': fields.Str(required=False, default="medium", missing="medium", values=['low', 'medium', 'high']),
+            'execution_timeout': fields.Int(required=False, default=120, missing=120)
         },
         'info': 'submit sample to cuckoo'
     })
