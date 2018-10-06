@@ -42,8 +42,6 @@ class Interface(scale.Interface):
                                         timeout=10)
             except Exception:
                 raise error.InterfaceWarning("failed to connect to VirusTotal")
-            if 'application/json' not in response.headers.get('content-type'):
-                raise error.InterfaceWarning("invalid response received from VirusTotal")
             if 'response_code' not in response.json():
                 raise error.InterfaceWarning("unknown response from VirusTotal")
             data = {'vt': response.json()}
@@ -67,7 +65,7 @@ class Interface(scale.Interface):
 
     @scale.pull({
         'args': {
-            'cache': fields.Bool(default=True, missing=True)
+            'cache': fields.Bool(default=True)
         },
         'info': 'virustotal results report'
     })
@@ -115,7 +113,7 @@ class Interface(scale.Interface):
     if IS_PRIVATE:
         @scale.pull({
             'args': {
-                'cache': fields.Bool(default=True, missing=True)
+                'cache': fields.Bool(default=True)
             },
             'info': 'VirusTotal general info report'
         })
@@ -150,7 +148,7 @@ class Interface(scale.Interface):
 
         @scale.pull({
             'args': {
-                'cache': fields.Bool(default=True, missing=True)
+                'cache': fields.Bool(default=True)
             },
             'info': 'VirtualTotal submission names'
         })
@@ -168,7 +166,7 @@ class Interface(scale.Interface):
 
         @scale.pull({
             'args': {
-                'cache': fields.Bool(default=True, missing=True)
+                'cache': fields.Bool(default=True)
             },
             'info': 'VirusTotal associates URLs'
         })
@@ -187,7 +185,7 @@ class Interface(scale.Interface):
 
         @scale.pull({
             'args': {
-                'cache': fields.Bool(default=True, missing=True)
+                'cache': fields.Bool(default=True)
             },
             'info': 'VirtualTotal submission names'
         })
@@ -208,7 +206,7 @@ class Interface(scale.Interface):
     else:
         @scale.pull({
             'args': {
-                'cache': fields.Bool(default=True, missing=True)
+                'cache': fields.Bool(default=True)
             },
             'info': 'VirusTotal general info report'
         })
