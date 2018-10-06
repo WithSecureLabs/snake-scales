@@ -67,7 +67,7 @@ class Interface(scale.Interface):
 
     @scale.pull({
         'args': {
-            'cache': fields.Bool(default=True, missing=True)
+            'cache': fields.Bool(default=True)
         },
         'info': 'virustotal results report'
     })
@@ -115,7 +115,7 @@ class Interface(scale.Interface):
     if IS_PRIVATE:
         @scale.pull({
             'args': {
-                'cache': fields.Bool(default=True, missing=True)
+                'cache': fields.Bool(default=True)
             },
             'info': 'VirusTotal general info report'
         })
@@ -150,7 +150,7 @@ class Interface(scale.Interface):
 
         @scale.pull({
             'args': {
-                'cache': fields.Bool(default=True, missing=True)
+                'cache': fields.Bool(default=True)
             },
             'info': 'VirtualTotal submission names'
         })
@@ -168,7 +168,7 @@ class Interface(scale.Interface):
 
         @scale.pull({
             'args': {
-                'cache': fields.Bool(default=True, missing=True)
+                'cache': fields.Bool(default=True)
             },
             'info': 'VirusTotal associates URLs'
         })
@@ -187,7 +187,7 @@ class Interface(scale.Interface):
 
         @scale.pull({
             'args': {
-                'cache': fields.Bool(default=True, missing=True)
+                'cache': fields.Bool(default=True)
             },
             'info': 'VirtualTotal submission names'
         })
@@ -208,7 +208,7 @@ class Interface(scale.Interface):
     else:
         @scale.pull({
             'args': {
-                'cache': fields.Bool(default=True, missing=True)
+                'cache': fields.Bool(default=True)
             },
             'info': 'VirusTotal general info report'
         })

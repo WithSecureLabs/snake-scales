@@ -31,8 +31,8 @@ class Commands(scale.Commands):  # pylint: disable=too-many-public-methods
     @scale.command({
         'args': {
             'offset': fields.Str(required=True),
-            'magic_bytes': fields.Str(default=None, missing=None),
-            'patch': fields.Bool(default=True, missing=True),
+            'magic_bytes': fields.Str(default=None),
+            'patch': fields.Bool(default=True),
             'size': fields.Str(required=True),
         },
         'info': 'this function will carve binaries out of MDMP files'
@@ -79,14 +79,14 @@ class Commands(scale.Commands):  # pylint: disable=too-many-public-methods
 
     @scale.command({
         'args': {
-            'bits': fields.Str(default='32', missing='32', values=['32', '64']),
+            'bits': fields.Int(default=32, values=[32, 64]),
             'technique': fields.Str(required=True, values=r2_hash_func_decoder.TECHNIQUES)
         },
         'info': 'scan shellcode for hashed functions'
     })
     def hash_function_decoder(self, args, file, opts):
         # Validate
-        if args['bits'] not in ['32', '64']:
+        if args['bits'] not in [32, 64]:
             raise error.CommandError('invalid bits provided, currently supported: 32, 64')
         if args['technique'] not in r2_hash_func_decoder.TECHNIQUES:
             raise error.CommandError('invalid technique provided, currently supported: {}'.format(r2_hash_func_decoder.TECHNIQUES))

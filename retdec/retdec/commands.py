@@ -83,7 +83,7 @@ class Commands(scale.Commands):
         'args': {
             'address_range': fields.Str(),
             'function_name': fields.Str(),
-            'mode': fields.Str(default='bin', missing='bin')
+            'mode': fields.Str(default='bin')
         },
         'info': 'decompile a function with retdec'
     })
