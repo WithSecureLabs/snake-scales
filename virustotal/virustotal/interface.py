@@ -42,8 +42,6 @@ class Interface(scale.Interface):
                                         timeout=10)
             except Exception:
                 raise error.InterfaceWarning("failed to connect to VirusTotal")
-            if 'application/json' not in response.headers.get('content-type'):
-                raise error.InterfaceWarning("invalid response received from VirusTotal")
             if 'response_code' not in response.json():
                 raise error.InterfaceWarning("unknown response from VirusTotal")
             data = {'vt': response.json()}
