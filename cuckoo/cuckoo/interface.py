@@ -22,7 +22,7 @@ class Interface(scale.Interface):
 
     def get_id(self, sha256_digest):
         try:
-            resp = requests.get(CUCKOO_API + '/files/view/sha256/' + file.sha256_digest, verify=VERIFY)
+            resp = requests.get(CUCKOO_API + '/files/view/sha256/' + sha256_digest, verify=VERIFY)
         except requests.exceptions.RequestException:
             raise error.InterfaceError("failed to connect to Cuckoo")
         if resp.status_code != requests.codes.ok:  # pylint: disable=no-member
@@ -162,17 +162,26 @@ class Interface(scale.Interface):
 
     @scale.push({
         'args': {
-            'machine': fields.Str(required=False, values=get_machines),
+            'machine': fields.Str(required=False, default="default", values=get_machines),
             'priority': fields.Str(required=False, default="medium", values=['low', 'medium', 'high']),
-            'timeout': fields.Int(required=False, default=120)
+            'execution_timeout': fields.Int(required=False, default=120)
         },
         'info': 'submit sample to cuckoo'
     })
     def submit(self, args, file, opts):
         document = db.file_collection.select(file.sha256_digest)
+        # Populate data if the defaults are different
+        data = {}
+        if args['priority'] is not opts.args['priority'].default:
+            data['priority'] = args['priority']
+        if args['execution_timeout'] is not opts.args['execution_timeout'].default:
+            data['timeout'] = args['execution_timeout']
+        if args['machine'] is not opts.args['machine'].default:
+            data['machine'] = args['machine']
+
         with open(file.file_path, "rb") as f:
             try:
-                r = requests.post(CUCKOO_API + '/tasks/create/file', files={"file": (document['name'], f)}, verify=VERIFY)
+                r = requests.post(CUCKOO_API + '/tasks/create/file', files={"file": (document['name'], f)}, data=data, verify=VERIFY)
             except requests.exceptions.RequestException:
                 raise error.InterfaceError("failed to connect to Cuckoo")
 
