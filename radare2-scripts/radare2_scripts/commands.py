@@ -40,6 +40,8 @@ class Commands(scale.Commands):  # pylint: disable=too-many-public-methods
     def binary_carver(self, args, file, opts):
         sample = {}
         with tempfile.TemporaryDirectory(dir=path.abspath(path.expanduser(config.snake_config['cache_dir']))) as temp_dir:
+            if 'magic_bytes' not in args:
+                args['magic_bytes'] = None
             # Try and carve
             file_path = r2_bin_carver.carve(file.file_path, temp_dir, args['offset'], args['size'], args['magic_bytes'])
             if not file_path:
