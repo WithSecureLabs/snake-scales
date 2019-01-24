@@ -31,7 +31,6 @@ def carve(file_path, output_dir, offset, size, magic=None):
             return None
         else:
             print("[+] Magic found, carving...")
-            return None
 
     r2.cmd("s %s" % (offset))
     r2.cmd('wtf %s.%s %s' % (output_dir, offset, size))
