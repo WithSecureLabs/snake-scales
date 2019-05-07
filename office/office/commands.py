@@ -1,10 +1,16 @@
 import logging
 from os import path
 import subprocess
+from importlib import reload
+import sys, io
 
 import olefile
+from oletools import mraptor
+from oletools import oledir
 from oletools import oleid
+from oletools import olemeta
 from oletools import olevba3
+from oletools.thirdparty.tablestream import tablestream
 
 from snake import config
 from snake import error
@@ -173,21 +179,128 @@ class Commands(scale.Commands):
             output += md.table_row(('-', '-', '-'))
         return output
 
-    if has_oledump:  # Optional Dependency
-        @scale.command({
-            'info': 'view a dump of the ole streams using oledump'
-        })
-        def oledump(self, args, file, opts):
-            try:
-                proc = subprocess.run(["python2", OLEDUMP_PATH, file.file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                # TODO: Review further uses of oledump
-            except Exception as err:
-                raise error.CommandWarning("An unknown error occurred when running oledump: %s" % err)
+    @scale.command({
+        'info': 'view a dump of the ole streams'
+    })
+    def oledir(self, args, file, opts):
 
-            if 'is not a valid OLE file' in str(proc.stdout):
-                raise error.CommandWarning('file is not a valid ole file')
-            else:
-                return {'oledump': str(proc.stdout, encoding='latin-1')}
+        # Monkeypatch 1 - This is to force the script argument to the appropriate file locaiton for analysis
+        def temp_args(_a, _b):
+            return [file.file_path]
 
-        def oledump_plaintext(self, json):
-            return json['oledump']
+        # Monkeypatch 2 - This is to customise the write function of tablewriter so that the output can be collected by iostream
+        def custom_write(self, a):
+            a = a.replace(u"\uFFFD", '')
+            print(a, end="")
+
+        # Deoploy Monkeypatch 1
+        import optparse
+        get_args = optparse.OptionParser._get_args
+        optparse.OptionParser._get_args = temp_args
+
+        # Deploy MoknkeyPath 2
+        oledir_old = tablestream.TableStream.write
+        tablestream.TableStream.write = custom_write
+
+        # Mokeypatch - This rediverts stdout to a stream that can be collected later for results
+        sys.stdout = io.StringIO()
+
+        try:
+            oledir.main()
+        except Exception:
+            # Revert patched functions to originals
+            optparse.OptionParser._get_args = get_args
+            sys.stdout = sys.__stdout__
+            tablestream.TableStream.write = oledir_old
+            reload(oledir)
+            raise error.CommandWarning('Dir old dump error')
+
+        result = sys.stdout.getvalue()
+
+        # Revert patched function to originals
+        optparse.OptionParser._get_args = get_args
+        sys.stdout = sys.__stdout__
+        tablestream.TableStream.write = oledir_old
+        reload(oledir)
+
+        return result
+
+    # Table generated is good as is, why change it?
+    def oledir_plaintext(self, json):
+        return json
+
+    @scale.command({
+        'info': 'view a metadata for ole file'
+    })
+    def olemeta(self, args, file, opts):
+
+        # Monkeypatch 1 - This is to force the script argument to the appropriate file locaiton for analysis
+        def temp_args(_a, _b):
+            return [file.file_path]
+
+        # Deoploy Monkeypatch 1
+        import optparse
+        get_args = optparse.OptionParser._get_args
+        optparse.OptionParser._get_args = temp_args
+
+        # Mokeypatch - This rediverts stdout to a stream that can be collected later for results
+        sys.stdout = io.StringIO()
+
+        try:
+            olemeta.main()
+        except Exception:
+            # Revert patched functions to originals
+            optparse.OptionParser._get_args = get_args
+            sys.stdout = sys.__stdout__
+            raise error.CommandWarning('Dir old dump error')
+
+        result = sys.stdout.getvalue()
+
+        # Revert patched function to originals
+        optparse.OptionParser._get_args = get_args
+        sys.stdout = sys.__stdout__
+        reload(oledir)
+
+        return result
+
+    # Table generated is good as is, why change it?
+    def olemeta_plaintext(self, json):
+        return json
+
+    @scale.command({
+        'info': 'view a metadata for ole file'
+    })
+    def mraptor(self, args, file, opts):
+
+        # Monkeypatch 1 - This is to force the script argument to the appropriate file locaiton for analysis
+        def temp_args(_a, _b):
+            return [file.file_path]
+
+        # Deoploy Monkeypatch 1
+        import optparse
+        get_args = optparse.OptionParser._get_args
+        optparse.OptionParser._get_args = temp_args
+
+        # Mokeypatch - This rediverts stdout to a stream that can be collected later for results
+        sys.stdout = io.StringIO()
+
+        try:
+            mraptor.main()
+        except Exception:
+            # Revert patched functions to originals
+            optparse.OptionParser._get_args = get_args
+            sys.stdout = sys.__stdout__
+            raise error.CommandWarning('Dir old dump error')
+
+        result = sys.stdout.getvalue()
+
+        # Revert patched function to originals
+        optparse.OptionParser._get_args = get_args
+        sys.stdout = sys.__stdout__
+        reload(oledir)
+
+        return result
+
+    # Table generated is good as is, why change it?
+    def mraptor_plaintext(self, json):
+        return json
