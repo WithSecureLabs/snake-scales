@@ -20,18 +20,6 @@ from snake.utils import markdown as md
 
 app_log = logging.getLogger("tornado.application")  # pylint: disable=invalid-name
 
-
-OLEDUMP_PATH = config.scale_configs['office']['oledump_path']
-if OLEDUMP_PATH and path.isfile(OLEDUMP_PATH):
-    has_oledump = True  # pylint: disable=invalid-name
-else:
-    if OLEDUMP_PATH:
-        app_log.warning("oledump disabled - optional dependencies not met: 'oledump' not found")
-    else:
-        app_log.warning("oledump disabled - optional dependencies not met: 'oledump_path' not set")
-    has_oledump = False  # pylint: disable=invalid-name
-
-
 class Commands(scale.Commands):
     def check(self):
         pass
