@@ -140,17 +140,7 @@ Search for sample in NIST's NSRL hashes.
 
 ### Office
 
-Analyse a sample using `olefile`, `oletools`, and `oledump`.
-
-#### Dependencies
-
-- (Optional) Oledump
-
-#### Configuration
-
-| Variable | Default | Description |
-| --- | --- | --- |
-| oledump\_path | null | Path to oledump.py |
+Analyse a sample using `olefile`, `oletools`.
 
 ### PDF
 
