@@ -435,6 +435,8 @@ class Commands(scale.Commands):
 
                     index += 1
             output.append(result)
+        if not output:
+            raise error.CommandWarning("No ole object was found")
         return output
     
     def oleobj_markdown(self, json):
@@ -445,18 +447,18 @@ class Commands(scale.Commands):
         for i in json:
             if not i:
                 raise error.CommandWarning('No ole object was found')
-            output += md.bold("Found embedded file = ") + str(i['Saved_Filename']) + "\n"
-            output += md.bold("Source path = ") + str(i['Source_path']) + "\n"
-            output += md.bold("Temp path = ") + str(i['Temp_path']) + "\n"
+            output += "**Found embedded file =** ") + str(i['Saved_Filename']) + "\n"
+            output += "**Source path =** ") + str(i['Source_path']) + "\n"
+            output += "**Temp path =** ") + str(i['Temp_path']) + "\n"
 
             for j in i['samples']:
                 # XXX - Fix me hardcoded URL
-                output += md.bold("Extracted_file.URL: ") + md.url("SNAKE_URL", "/sample/" + str(j['sha256_digest'])) + '\n'
-                output += md.bold("Extracted_file.DESCRIPTION: ") + str(j['description']) + '\n'
-                output += md.bold("Extracted_file.MIME: ") + str(j['mime']) + '\n'
-                output += md.bold("Extracted_file.SIZE: ") + str(j['size']) + '\n'
-                output += md.bold("Extracted_file.MAGIC: ") + str(j['magic']) + '\n'
-                output += md.bold("Extracted_file.SHA256: ") + str(j['sha256_digest']) + '\n'
+                output += "**Extracted_file.URL:** ") + md.url("SNAKE_URL", "/sample/" + str(j['sha256_digest'])) + '\n'
+                output += "**Extracted_file.DESCRIPTION:** ") + str(j['description']) + '\n'
+                output += "**Extracted_file.MIME:** ") + str(j['mime']) + '\n'
+                output += "**Extracted_file.SIZE:** ") + str(j['size']) + '\n'
+                output += "**Extracted_file.MAGIC:** ") + str(j['magic']) + '\n'
+                output += "**Extracted_file.SHA256:** ") + str(j['sha256_digest']) + '\n'
         return output
 
     def oleobj_plaintext(self, json):
@@ -567,9 +569,9 @@ class Commands(scale.Commands):
             output = "No json\n"
             return output
         for i in json:
-            output += md.bold("Macro is: ") + str(i['Result']) + "\n"
-            output += md.bold("Flags: ") + str(i['Flags']) + "\n"
-            output += md.bold("Regexps matched on: ") + str(i['Match_on']) + "\n"
+            output += "**Macro is:** ") + str(i['Result']) + "\n"
+            output += "**Flags:** ") + str(i['Flags']) + "\n"
+            output += "**Regexps matched on:** ") + str(i['Match_on']) + "\n"
         return output
 
     def mraptor_plaintext(self, json):
