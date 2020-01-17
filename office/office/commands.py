@@ -56,7 +56,7 @@ class Commands(scale.Commands):
         output = {}
         for attrib in attribs:
             if isinstance(getattr(meta, attrib), bytes):
-                output[attrib] = str(getattr(meta, attrib).decode("utf-8"))
+                output[attrib] = str(getattr(meta, attrib).decode("latin-1"))
             else:
                 output[attrib] = str(getattr(meta, attrib))
         return output
@@ -97,7 +97,7 @@ class Commands(scale.Commands):
                     'stream': str(i),
                     'stream_path': str(m[1]),
                     'vba_filename': str(m[2]),
-                    'code': str(m[3].decode('utf-8'))
+                    'code': str(m[3].decode('latin-1'))
                 }]
             except:
                 output += [{
@@ -145,7 +145,7 @@ class Commands(scale.Commands):
         for kw_type, keyword, description in results:
             output += [{
                 'type': kw_type,
-                'keyword': str(str(keyword).encode('utf-8'))[2:-1],
+                'keyword': str(str(keyword).encode('latin-1'))[2:-1],
                 'description': description
             }]
         vbaparser.close()
@@ -177,7 +177,7 @@ class Commands(scale.Commands):
         for i in indicators:
             output += [{
                 'name': str(i.name),
-                'value': str(i.value.decode('utf-8')) if isinstance(i.value, bytes) else str(i.value),
+                'value': str(i.value.decode('latin-1')) if isinstance(i.value, bytes) else str(i.value),
                 'description': str(i.description)
             }]
         return output
@@ -447,18 +447,18 @@ class Commands(scale.Commands):
         for i in json:
             if not i:
                 raise error.CommandWarning('No ole object was found')
-            output += "**Found embedded file =** ") + str(i['Saved_Filename']) + "\n"
-            output += "**Source path =** ") + str(i['Source_path']) + "\n"
-            output += "**Temp path =** ") + str(i['Temp_path']) + "\n"
+            output += "**Found embedded file =** " + str(i['Saved_Filename']) + "\n"
+            output += "**Source path =** " + str(i['Source_path']) + "\n"
+            output += "**Temp path =** " + str(i['Temp_path']) + "\n"
 
             for j in i['samples']:
                 # XXX - Fix me hardcoded URL
-                output += "**Extracted_file.URL:** ") + md.url("SNAKE_URL", "/sample/" + str(j['sha256_digest'])) + '\n'
-                output += "**Extracted_file.DESCRIPTION:** ") + str(j['description']) + '\n'
-                output += "**Extracted_file.MIME:** ") + str(j['mime']) + '\n'
-                output += "**Extracted_file.SIZE:** ") + str(j['size']) + '\n'
-                output += "**Extracted_file.MAGIC:** ") + str(j['magic']) + '\n'
-                output += "**Extracted_file.SHA256:** ") + str(j['sha256_digest']) + '\n'
+                output += "**Extracted_file.URL:** " + md.url("SNAKE_URL", "/sample/" + str(j['sha256_digest'])) + '\n'
+                output += "**Extracted_file.DESCRIPTION:** " + str(j['description']) + '\n'
+                output += "**Extracted_file.MIME:** " + str(j['mime']) + '\n'
+                output += "**Extracted_file.SIZE:** " + str(j['size']) + '\n'
+                output += "**Extracted_file.MAGIC:** " + str(j['magic']) + '\n'
+                output += "**Extracted_file.SHA256:** " + str(j['sha256_digest']) + '\n'
         return output
 
     def oleobj_plaintext(self, json):
@@ -569,9 +569,9 @@ class Commands(scale.Commands):
             output = "No json\n"
             return output
         for i in json:
-            output += "**Macro is:** ") + str(i['Result']) + "\n"
-            output += "**Flags:** ") + str(i['Flags']) + "\n"
-            output += "**Regexps matched on:** ") + str(i['Match_on']) + "\n"
+            output += "**Macro is:** " + str(i['Result']) + "\n"
+            output += "**Flags:** " + str(i['Flags']) + "\n"
+            output += "**Regexps matched on:** " + str(i['Match_on']) + "\n"
         return output
 
     def mraptor_plaintext(self, json):
