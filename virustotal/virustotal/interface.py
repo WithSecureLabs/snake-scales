@@ -87,18 +87,17 @@ class Interface(scale.Interface):
             if str(json[vendor]['detected']) == "True":
                 score += 1
                 output += vendor + ' | '
-                output += '%red '
-                output += str(json[vendor]['result']).replace('%', r'\%') + '%'
+                output += str(json[vendor]['result']).replace('%', r'\%')
                 output += ' | \r\n'
             else:
                 cleanoutput += vendor + ' | '
-                cleanoutput += '%green Clean %'
+                cleanoutput += 'Clean'
                 cleanoutput += ' | \r\n'
 
         if score < 3:
-            output = '**Score: %green ' + str(score) + '/' + str(count) + ' % **\r\n\r\n' + output
+            output = '**Score: ' + str(score) + '/' + str(count) + '**\r\n\r\n' + output
         else:
-            output = '**Score: %red ' + str(score) + '/' + str(count) + ' % **\r\n\r\n' + output
+            output = '**Score: ' + str(score) + '/' + str(count) + '**\r\n\r\n' + output
 
         output = output + cleanoutput
 
@@ -141,9 +140,9 @@ class Interface(scale.Interface):
             output += md.table_row(('First Seen', json['first_seen']))
             output += md.table_row(('Last Seen', json['last_seen']))
             if int(json['score'].split('/')[0]) < 3:
-                output += md.table_row(('Score', '%green ' + json['score'] + ' %'))
+                output += md.table_row(('Score', json['score']))
             else:
-                output += md.table_row(('Score', '%red ' + json['score'] + ' %'))
+                output += md.table_row(('Score', json['score']))
             output += md.table_row(('Times Submitted', str(json['times_submitted'])))
             output += md.table_row(('Type', json['type']))
             return output
@@ -228,7 +227,7 @@ class Interface(scale.Interface):
             output = md.table_header(('Attribute', 'Value'))
             output += md.table_row(('VT Link', json['vt_link']))
             if int(json['score'].split('/')[0]) < 3:
-                output += md.table_row(('Score', '%green ' + json['score'] + ' %'))
+                output += md.table_row(('Score', json['score']))
             else:
-                output += md.table_row(('Score', '%red ' + json['score'] + ' %'))
+                output += md.table_row(('Score', json['score']))
             return output
