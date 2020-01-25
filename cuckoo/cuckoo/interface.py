@@ -42,6 +42,7 @@ class Interface(scale.Interface):
                 r = requests.get(CUCKOO_API + '/tasks/report/' + str(t['id']), verify=VERIFY)
                 if r.status_code == requests.codes.ok:  # pylint: disable=no-member
                     j = r.json()
+                    name = j['info']['machine']['name'] if 'name' in j['info']['machine'] else 'unknown'
                     output += [{
                         'score': j['info']['score'],
                         'name': j['info']['machine']['name']
@@ -55,9 +56,9 @@ class Interface(scale.Interface):
         for j in json['info']:
             score = j['score']
             if score > 5:
-                s = "%red " + str(score) + " %"
+                s = str(score)
             elif score > 3:
-                s = "%yellow " + str(score) + " %"
+                s = str(score)
             else:
                 s = str(score)
             output += md.table_row((j['name'], s))
@@ -114,12 +115,7 @@ class Interface(scale.Interface):
         output += md.h4('Signatures')
         output += md.table_header(('Severity', 'Description'))
         for s in json['signatures']:
-            if s['severity'] > 2:
-                output += md.table_row(('%red ' + str(s['severity']) + ' %', s['description']))
-            elif s['severity'] > 1:
-                output += md.table_row(('%orange ' + str(s['severity']) + ' %', s['description']))
-            else:
-                output += md.table_row(('%blue ' + str(s['severity']) + ' %', s['description']))
+            output += md.table_row((str(s['severity']), s['description']))
         return output
 
     @scale.pull({
