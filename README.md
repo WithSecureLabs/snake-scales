@@ -31,7 +31,7 @@ A scale can be installed using pip as follows:
 
 ```bash
 # 1. Install the scale with pip
-pip install git+https://github.com/countercept/snake-scales/<SCALE>
+pip install 'git+https://github.com/countercept/snake-scales#egg=<SCALE>&subdirectory=<SCALE>'
 
 # 2. (Optional) Copy scales conf file if present to /etc/snake/scales
 export SCALE=<SCALE>
