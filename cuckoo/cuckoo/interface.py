@@ -25,7 +25,10 @@ class Interface(scale.Interface):
     })
     def info(self, args, file, opts):
         try:
-            j = requests.get(CUCKOO_API + '/files/view/sha256/' + file.sha256_digest, verify=VERIFY).json()
+            resp = requests.get(CUCKOO_API + '/files/view/sha256/' + file.sha256_digest, verify=VERIFY)
+            if not resp.ok:
+                raise error.InterfaceWarning("file has never been submitted to Cuckoo")
+            j = resp.json()
         except requests.exceptions.RequestException:
             raise error.InterfaceError("failed to connect to Cuckoo")
 
